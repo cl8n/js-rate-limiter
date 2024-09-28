@@ -12,7 +12,7 @@ interface QueueItem {
 /**
  * A basic rate limiter that waits a fixed amount of time between jobs (functions that return promises).
  */
-export default class Limiter {
+export default class RateLimiter {
 	#delayBetweenMs: number;
 	#lastRun = Number.NEGATIVE_INFINITY;
 	#running: QueueItem[] = [];
@@ -39,7 +39,7 @@ export default class Limiter {
 	}
 
 	/**
-	 * Wrap a job with this limiter's `run()` method.
+	 * Wrap a job with this rate limiter's `run()` method.
 	 * @param job Job to wrap.
 	 * @returns The wrapped job.
 	 */
@@ -51,7 +51,7 @@ export default class Limiter {
 		const itemIndex = this.#running.findIndex((x) => x.hash === hash);
 
 		if (itemIndex === -1) {
-			throw new Error("Limiter queue desync");
+			throw new Error("RateLimiter queue desync");
 		}
 
 		this.#running.splice(itemIndex, 1)[0].resolve();
