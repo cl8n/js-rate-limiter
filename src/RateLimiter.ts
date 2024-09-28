@@ -1,8 +1,3 @@
-declare global {
-	// Declaring this here because it differs between browser and Node.js
-	function setTimeout(handler: (...args: unknown[]) => void, timeout?: number): void;
-}
-
 interface QueueItem {
 	hash: symbol;
 	promise: Promise<void>;
