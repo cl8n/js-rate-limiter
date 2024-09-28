@@ -1,6 +1,6 @@
 {
 	"name": "@cl8n/rate-limiter",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"author": "clayton <me@clayton.cc>",
 	"bugs": "https://github.com/cl8n/js-rate-limiter/issues",
 	"description": "Simple rate limiter",
