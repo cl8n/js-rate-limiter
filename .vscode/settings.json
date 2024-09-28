@@ -1,5 +1,10 @@
 {
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
-  }
+	"typescript.tsdk": "./node_modules/typescript/lib",
+	"[json][jsonc][typescript]": {
+		"editor.codeActionsOnSave": {
+			"quickfix.biome": "explicit",
+			"source.organizeImports.biome": "explicit"
+		},
+		"editor.defaultFormatter": "biomejs.biome"
+	}
 }
