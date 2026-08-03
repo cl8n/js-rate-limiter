@@ -27,15 +27,6 @@ export default class RateLimiter {
 			.finally(() => this.#end(id));
 	}
 
-	/**
-	 * Wrap a job with this rate limiter's `run()` method.
-	 * @param job Job to wrap.
-	 * @returns The wrapped job.
-	 */
-	wrap<T>(job: () => T | Promise<T>): () => Promise<T> {
-		return () => this.run(job);
-	}
-
 	#end(hash: symbol): void {
 		this.#running.delete(hash);
 		this.#waiting.shift()?.();
