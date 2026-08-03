@@ -1,17 +1,11 @@
-interface QueueItem {
-	hash: symbol;
-	promise: Promise<void>;
-	resolve: () => void;
-}
-
 /**
  * A basic rate limiter that waits a fixed amount of time between jobs (functions that return promises).
  */
 export default class RateLimiter {
 	#delayBetweenMs: number;
 	#lastRun = Number.NEGATIVE_INFINITY;
-	#running: QueueItem[] = [];
-	#waiting: QueueItem[] = [];
+	#running: Set<symbol> = new Set();
+	#waiting: (() => void)[] = [];
 
 	/**
 	 * @param delayBetweenMs Delay between processing jobs in the queue.
@@ -43,38 +37,18 @@ export default class RateLimiter {
 	}
 
 	#end(hash: symbol): void {
-		const itemIndex = this.#running.findIndex((x) => x.hash === hash);
-
-		if (itemIndex === -1) {
-			throw new Error("RateLimiter queue desync");
-		}
-
-		this.#running.splice(itemIndex, 1)[0].resolve();
-
-		const nextItem = this.#waiting.shift();
-
-		if (nextItem != null) {
-			nextItem.resolve();
-		}
+		this.#running.delete(hash);
+		this.#waiting.shift()?.();
 	}
 
 	async #wait(hash: symbol): Promise<void> {
-		const item: Partial<QueueItem> = { hash };
-
-		if (this.#running.length > 0) {
-			item.promise = new Promise((resolve) => {
-				item.resolve = resolve;
+		if (this.#running.size > 0) {
+			await new Promise<void>((resolve) => {
+				this.#waiting.push(resolve);
 			});
-
-			this.#waiting.push(item as QueueItem);
-			await item.promise;
 		}
 
-		item.promise = new Promise((resolve) => {
-			item.resolve = resolve;
-		});
-
-		this.#running.push(item as QueueItem);
+		this.#running.add(hash);
 
 		while (Date.now() - this.#lastRun < this.#delayBetweenMs) {
 			await new Promise((resolve) =>
