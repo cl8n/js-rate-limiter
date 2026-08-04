@@ -4,7 +4,7 @@
 export default class RateLimiter {
 	#delayBetweenMs: number;
 	#lastRun = Number.NEGATIVE_INFINITY;
-	#running: Set<symbol> = new Set();
+	#running = false;
 	#waiting: (() => void)[] = [];
 
 	/**
@@ -20,26 +20,24 @@ export default class RateLimiter {
 	 * @returns The result of the job.
 	 */
 	run<T>(job: () => T | Promise<T>): Promise<T> {
-		const id = Symbol();
-
-		return this.#wait(id)
+		return this.#wait()
 			.then(job)
-			.finally(() => this.#end(id));
+			.finally(() => this.#end());
 	}
 
-	#end(hash: symbol): void {
-		this.#running.delete(hash);
+	#end(): void {
+		this.#running = false;
 		this.#waiting.shift()?.();
 	}
 
-	async #wait(hash: symbol): Promise<void> {
-		if (this.#running.size > 0) {
+	async #wait(): Promise<void> {
+		if (this.#running) {
 			await new Promise<void>((resolve) => {
 				this.#waiting.push(resolve);
 			});
 		}
 
-		this.#running.add(hash);
+		this.#running = true;
 
 		while (Date.now() - this.#lastRun < this.#delayBetweenMs) {
 			await new Promise((resolve) =>
