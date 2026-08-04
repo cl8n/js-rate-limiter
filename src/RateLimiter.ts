@@ -5,6 +5,8 @@ export default class RateLimiter {
 	#delayBetweenMs: number;
 	#lastRun = Number.NEGATIVE_INFINITY;
 	#running = false;
+	#runningDelayResolve: (() => void) | undefined;
+	#runningDelayTimeout: NodeJS.Timeout | undefined;
 	#waiting: (() => void)[] = [];
 
 	/**
@@ -12,6 +14,16 @@ export default class RateLimiter {
 	 */
 	constructor(delayBetweenMs: number) {
 		this.#delayBetweenMs = delayBetweenMs;
+	}
+
+	/**
+	 * Cancel any current delay and begin processing the next job.
+	 */
+	advance(): void {
+		this.#lastRun = Number.NEGATIVE_INFINITY;
+
+		clearTimeout(this.#runningDelayTimeout);
+		this.#runningDelayResolve?.();
 	}
 
 	/**
@@ -40,11 +52,17 @@ export default class RateLimiter {
 		this.#running = true;
 
 		while (Date.now() - this.#lastRun < this.#delayBetweenMs) {
-			await new Promise((resolve) =>
-				setTimeout(resolve, this.#delayBetweenMs - (Date.now() - this.#lastRun)),
-			);
+			await new Promise<void>((resolve) => {
+				this.#runningDelayResolve = resolve;
+				this.#runningDelayTimeout = setTimeout(
+					resolve,
+					this.#delayBetweenMs - (Date.now() - this.#lastRun),
+				);
+			});
 		}
 
 		this.#lastRun = Date.now();
+		this.#runningDelayResolve = undefined;
+		this.#runningDelayTimeout = undefined;
 	}
 }
